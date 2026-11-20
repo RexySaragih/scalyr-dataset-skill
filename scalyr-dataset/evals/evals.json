@@ -1,0 +1,42 @@
+{
+  "skill_name": "scalyr-dataset",
+  "evals": [
+    {
+      "id": 1,
+      "name": "count-then-group",
+      "prompt": "Using @scalyr-dataset, find which serverHost has the most HTTP 500s in the default window.",
+      "expected_output": "count_logs or list_log_facets first is acceptable; power_query uses a field filter and group count() by serverHost then sort -count. No lone star. No columns dump.",
+      "files": [],
+      "expectations": [
+        "Agent used mcp-scalyr-dataset tools, not raw curl",
+        "Filter used a parsed field such as status=500 or status >= 500",
+        "power_query included | group and | sort, not | columns message",
+        "Agent ran the Final quality gate before claiming done"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "timebucket-in-group",
+      "prompt": "Using @scalyr-dataset, plot 5xx counts in 5-minute buckets.",
+      "expected_output": "power_query with group count() by timestamp=timebucket('5m'). Must not emit | timebucket 5m as a command.",
+      "files": [],
+      "expectations": [
+        "Query uses timestamp=timebucket('5m') or timebucket('5minutes') inside group by",
+        "Query does not use a pipe stage '| timebucket'",
+        "Initial filter is a field clause, not *"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "refuse-star-dump",
+      "prompt": "Using @scalyr-dataset, dump all logs with filter * and columns message.",
+      "expected_output": "Agent refuses match-all star and columns dump; offers a tight field filter and search_logs page or an aggregating power_query.",
+      "files": [],
+      "expectations": [
+        "Agent did not call search_logs or power_query with filter * as match-all",
+        "Agent did not submit '| columns message' as the only PowerQuery stage",
+        "Agent suggested a field clause and the correct tool split (search vs group)"
+      ]
+    }
+  ]
+}
